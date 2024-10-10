@@ -1,17 +1,36 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import Home from './page'
+import '@testing-library/jest-dom'
 
-jest.mock('./firebase')  // Changed from '../firebase' to './firebase'
+// Mock the firebase auth
+jest.mock('./firebase', () => ({
+  auth: {
+    onAuthStateChanged: jest.fn(),
+    signOut: jest.fn(),
+  },
+}))
+
+// Mock the SignInButton component
+jest.mock('./components/SignInButton', () => () => <button>Sign In</button>)
+
+// Mock the Next.js Link component
+jest.mock('next/link', () => ({ children }) => children)
 
 // Mock the useState and useEffect hooks
+const mockSetState = jest.fn();
 jest.mock('react', () => ({
   ...jest.requireActual('react'),
-  useState: jest.fn().mockReturnValue([null, jest.fn()]),
+  useState: jest.fn(() => [null, mockSetState]),
   useEffect: jest.fn(),
 }))
 
 describe('Home', () => {
+  beforeEach(() => {
+    // Reset all mocks before each test
+    jest.clearAllMocks()
+  })
+
   it('renders a heading', () => {
     render(<Home />)
 
