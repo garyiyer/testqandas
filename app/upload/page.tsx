@@ -7,11 +7,15 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 
-export default function Upload() {
+const UploadPage = () => {
 	const [userName, setUserName] = useState<string | null>(null);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [files, setFiles] = useState<FileList | null>(null);
 	const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+	const [uploading, setUploading] = useState(false);
+	const [progress, setProgress] = useState<number[]>([]);
+	const [error, setError] = useState<string | null>(null);
+	const [uploadSuccess, setUploadSuccess] = useState(false);  // New state for tracking upload success
 	const router = useRouter();
 
 	useEffect(() => {
@@ -36,8 +40,14 @@ export default function Upload() {
 		setUploadMessage(null);
 	};
 
-	const handleUpload = async () => {
-		if (files && files.length > 0) {
+	const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		if (!files || files.length === 0) return;
+
+		setUploading(true);
+		setError(null);
+
+		try {
 			const file = files[0];
 			const filesCollection = collection(firestore, 'files');
 			const q = query(filesCollection, where('name', '==', file.name));
@@ -64,9 +74,19 @@ export default function Upload() {
 				lastModified: file.lastModified,
 			});
 
-			setUploadMessage(`File ${file.name} has been uploaded.`);
-			console.log(`File ${file.name} has been uploaded.`);
+			setUploadSuccess(true);  // Set to true after successful upload
+		} catch (error) {
+			console.error('Error uploading file:', error);
+			setError('An error occurred while uploading the file.');
+			setUploadSuccess(false);  // Ensure this is false if upload fails
+		} finally {
+			setUploading(false);
 		}
+	};
+
+	const handlePrepForAI = () => {
+		// This function will be implemented later to trigger the Cloud Function
+		console.log('Preparing file for AI processing');
 	};
 
 	return (
@@ -126,12 +146,23 @@ export default function Upload() {
 				>
 					Submit
 				</button>
+				{uploadSuccess && (
+					<button
+						onClick={handlePrepForAI}
+						className="bg-orange-500 text-white py-2 px-6 rounded-lg text-lg"
+					>
+						Prep for AI
+					</button>
+				)}
 			</div>
 			{uploadMessage && (
 				<div className="mt-8 text-white">
 					<h2 className="text-2xl font-bold">{uploadMessage}</h2>
 				</div>
 			)}
+			{error && <p className="text-red-500">{error}</p>}
 		</div>
 	);
-}
+};
+
+export default UploadPage;
