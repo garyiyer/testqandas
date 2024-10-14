@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '../firebase'; // Import auth from your firebase setup
-import { onAuthStateChanged } from 'firebase/auth'; // Import directly from firebase/auth
+import { auth, firestore, storage } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes } from 'firebase/storage';
 
 export default function Upload() {
 	const [userName, setUserName] = useState<string | null>(null);
@@ -12,7 +14,7 @@ export default function Upload() {
 	const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 	const router = useRouter();
 
-	React.useEffect(() => {
+	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, (user) => {
 			if (user) {
 				setUserName(user.displayName || user.email || 'User');
@@ -34,13 +36,36 @@ export default function Upload() {
 		setUploadMessage(null);
 	};
 
-	const handleUpload = () => {
+	const handleUpload = async () => {
 		if (files && files.length > 0) {
+			const file = files[0];
+			const filesCollection = collection(firestore, 'files');
+			const q = query(filesCollection, where('name', '==', file.name));
+			const querySnapshot = await getDocs(q);
+
+			if (!querySnapshot.empty) {
+				const userConfirmed = window.confirm('File already exists. Do you want to replace it?');
+				if (!userConfirmed) {
+					setUploadMessage('Upload cancelled.');
+					console.log('Upload cancelled.');
+					return;
+				}
+			}
+
 			setUploadMessage('Upload in progress...');
-			// Simulate upload process
-			setTimeout(() => {
-				setUploadMessage(`File ${files[0].name} has been uploaded.`);
-			}, 2000);
+			const storageRef = ref(storage, `uploads/${file.name}`);
+			await uploadBytes(storageRef, file);
+
+			const fileDoc = doc(filesCollection, file.name);
+			await setDoc(fileDoc, {
+				name: file.name,
+				size: file.size,
+				type: file.type,
+				lastModified: file.lastModified,
+			});
+
+			setUploadMessage(`File ${file.name} has been uploaded.`);
+			console.log(`File ${file.name} has been uploaded.`);
 		}
 	};
 
