@@ -5,14 +5,12 @@ import { auth } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import EmailAuth from './components/EmailAuth';
 import SignInButton from './components/SignInButton';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -23,61 +21,46 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard'); // Redirect to the Dashboard page
+    }
+  }, [user, router]);
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
+  if (user) {
+    return null; // Prevent rendering the login page if user is authenticated
+  }
+
   return (
-    <main className="flex min-h-screen flex-col justify-center items-center p-8 bg-gray-100">
-      {user ? (
-        <div className="absolute top-4 right-4 flex items-center">
-          <img
-            src="/profile-pic.jpg"
-            alt="Profile"
-            className="w-10 h-10 rounded-full mr-2"
-          />
-          <div className="relative">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="text-lg font-semibold"
-            >
-              Gary Iyer
-            </button>
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg">
-                <button
-                  onClick={() => auth.signOut()}
-                  className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
+    <div className="login-page">
+      <header className="flex justify-between items-center p-4 bg-black bg-opacity-70">
+        <div>Logo</div>
+        <nav>
+          <a href="#" className="text-white mx-2">HOME</a>
+          <a href="#" className="text-white mx-2">ABOUT</a>
+          <a href="#" className="text-white mx-2">SERVICE</a>
+          <a href="#" className="text-white mx-2">CONTACT</a>
+        </nav>
         <div>
-          <p>You are not logged in</p>
+          <input type="text" placeholder="Type to Search" className="p-1" />
+          <button className="bg-orange-500 text-white p-1">Search</button>
+        </div>
+      </header>
+      <main className="flex justify-between items-center mt-20">
+        <div className="main-content">
+          <h1>Generate Test Questions from any textbook you can upload</h1>
+          <p>We help students prepare for their exams by generating practice questions.</p>
+        </div>
+        <div className="login-form bg-black bg-opacity-80 p-6 rounded-lg w-80 mr-10">
+          <h2 className="text-white text-2xl mb-4">Login Here</h2>
           <EmailAuth />
           <SignInButton />
         </div>
-      )}
-      {user && (
-        <div className="border border-gray-300 p-8 w-full max-w-2xl bg-white">
-          <h1 className="text-2xl font-bold mb-4">Test Questions Generator</h1>
-          <div className="flex flex-col items-start mb-8">
-            <button
-              className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
-              onClick={() => router.push('/upload')} // Navigate to Upload page
-            >
-              Upload Knowledge Base
-            </button>
-            <button className="bg-blue-500 text-white py-2 px-4 rounded">
-              Generate Questions
-            </button>
-          </div>
-        </div>
-      )}
-    </main>
+      </main>
+    </div>
   );
 }

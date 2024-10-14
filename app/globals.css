@@ -15,16 +15,72 @@
 }
 
 body {
+  font-family: Arial, sans-serif;
+  background: url('/placeholder.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
-  color: var(--foreground);
-  background: var(--background);
+  height: 100vh;
+}
+
+.login-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100vh;
+}
+
+header {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+nav a {
+  color: #fff;
+  text-decoration: none;
+  margin: 0 10px;
 }
 
 main {
-  background-color: #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  flex-grow: 1;
+}
+
+.login-form {
+  background-color: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  margin-right: 10px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+}
+
+.login-form button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #ff6600;
+  color: #fff;
+  cursor: pointer;
+}
+
+.login-form a {
+  color: #ff6600;
+  text-decoration: none;
 }
 
 @layer utilities {
@@ -43,4 +99,18 @@ main {
 button {
   margin-bottom: 1rem;
   cursor: pointer;
+}
+
+.main-content {
+  text-align: left;
+  color: #333; /* Darker color for text */
+  margin-left: 20px;
+}
+
+.main-content h1 {
+  font-size: 2.5rem;
+}
+
+.main-content p {
+  font-size: 1.25rem;
 }

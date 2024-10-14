@@ -21,11 +21,14 @@ export default function EmailAuth() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Sign In button clicked'); // Debugging log
     try {
       await signInWithEmailAndPassword(auth, email, password);
       setError('');
+      console.log('Sign In successful'); // Debugging log
     } catch (error: any) {
       setError(error.message);
+      console.error('Sign In error:', error); // Debugging log
     }
   };
 
