@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-
-const auth = getAuth();
+import { auth } from '../firebase'; // Import auth from your firebase setup
+import { onAuthStateChanged } from 'firebase/auth'; // Import directly from firebase/auth
 
 export default function Dashboard() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -29,8 +28,11 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6 text-black">Dashboard</h1>
+    <div
+      className="flex flex-col items-center justify-center min-h-screen bg-cover"
+      style={{ backgroundImage: "url('/background.jpg')" }} // Placeholder background image
+    >
+      <h1 className="text-5xl font-bold mb-10 text-gray-800">Dashboard</h1>
       <div className="absolute top-4 right-4 flex items-center">
         <img
           src="/profile-pic.jpg" // Placeholder for profile picture
@@ -56,15 +58,20 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-      <button
-        className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
-        onClick={() => router.push('/upload')}
-      >
-        Upload Knowledge Base
-      </button>
-      <button className="bg-blue-500 text-white py-2 px-4 rounded">
-        Generate Questions
-      </button>
+      <div className="flex space-x-4">
+        <button
+          className="bg-orange-500 text-white py-4 px-8 rounded-lg text-xl"
+          onClick={() => router.push('/upload')}
+        >
+          Upload Knowledge Base
+        </button>
+        <button
+          className="bg-orange-500 text-white py-4 px-8 rounded-lg text-xl"
+          onClick={() => router.push('/generate')}
+        >
+          Generate Questions
+        </button>
+      </div>
     </div>
   );
 }

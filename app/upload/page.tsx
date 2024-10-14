@@ -1,92 +1,112 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { storage, firestore } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc } from 'firebase/firestore';
-import { auth } from '../firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { auth } from '../firebase'; // Import auth from your firebase setup
+import { onAuthStateChanged } from 'firebase/auth'; // Import directly from firebase/auth
 
-const UploadPage = () => {
-	const [user, setUser] = useState<User | null>(null);
-	const [files, setFiles] = useState<File[]>([]);
-	const [uploading, setUploading] = useState(false);
-	const [progress, setProgress] = useState<string[]>([]);
-	const [error, setError] = useState<string | null>(null);
-	const [processingMessage, setProcessingMessage] = useState<string | null>(null);
+export default function Upload() {
+	const [userName, setUserName] = useState<string | null>(null);
+	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [files, setFiles] = useState<FileList | null>(null);
+	const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+	const router = useRouter();
 
-	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-			setUser(currentUser);
+	React.useEffect(() => {
+		const unsubscribe = onAuthStateChanged(auth, (user) => {
+			if (user) {
+				setUserName(user.displayName || user.email || 'User');
+			} else {
+				setUserName(null);
+			}
 		});
 
 		return () => unsubscribe();
 	}, []);
 
-	if (!user) {
-		return <div>You must be logged in to upload files.</div>;
-	}
-
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (e.target.files) {
-			const selectedFiles = Array.from(e.target.files);
-			setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
-		}
+	const handleSignOut = async () => {
+		await auth.signOut();
+		router.push('/'); // Redirect to the login page
 	};
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		if (files.length === 0) return;
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setFiles(e.target.files);
+		setUploadMessage(null);
+	};
 
-		setUploading(true);
-		setProgress([`Uploading ${files.length} files...`]);
-		setError(null);
-		setProcessingMessage(null);
-
-		try {
-			for (const file of files) {
-				const storageRef = ref(storage, `uploads/${file.name}`);
-				await uploadBytes(storageRef, file);
-				const downloadURL = await getDownloadURL(storageRef);
-
-				await addDoc(collection(firestore, 'uploads'), {
-					fileName: file.name,
-					fileURL: downloadURL,
-					uploadedAt: new Date(),
-				});
-			}
-
-			setProgress(prev => [...prev, 'All files uploaded successfully']);
-			setProcessingMessage('Knowledge base created and ready to regenerate questions.');
-		} catch (err) {
-			console.error('Error uploading files:', err);
-			const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-			setError(`An error occurred while uploading the files: ${errorMessage}`);
-		} finally {
-			setUploading(false);
+	const handleUpload = () => {
+		if (files && files.length > 0) {
+			setUploadMessage('Upload in progress...');
+			// Simulate upload process
+			setTimeout(() => {
+				setUploadMessage(`File ${files[0].name} has been uploaded.`);
+			}, 2000);
 		}
 	};
 
 	return (
-		<div className="upload-container">
-			<h1 className="text-2xl font-bold">Upload Knowledge Base</h1>
-			<form onSubmit={handleSubmit} className="mt-4">
-				<input type="file" onChange={handleFileChange} multiple aria-label="upload file" />
-				<button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Submit</button>
-			</form>
-			<div className="mt-4">
-				<h2 className="text-lg font-semibold">Uploaded Files:</h2>
-				<ul>
-					{files.map((file, index) => (
-						<li key={index}>{file.name}</li>
-					))}
-				</ul>
+		<div
+			className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center"
+			style={{ backgroundImage: "url('/background.jpg')" }} // Placeholder background image
+		>
+			<div className="absolute top-4 left-4">
+				<button
+					className="bg-orange-500 text-white py-2 px-4 rounded-lg text-lg"
+					onClick={() => router.push('/dashboard')}
+				>
+					← Dashboard
+				</button>
 			</div>
-			{uploading && <p>{progress.join(', ')}</p>}
-			{error && <p style={{ color: 'red' }}>{error}</p>}
-			{processingMessage && <p>{processingMessage}</p>}
+			<h1 className="text-5xl font-bold mb-10 text-gray-800">Upload Knowledge Base</h1>
+			<div className="absolute top-4 right-4 flex items-center">
+				<img
+					src="/profile-pic.jpg" // Placeholder for profile picture
+					alt="Profile"
+					className="w-10 h-10 rounded-full mr-2"
+				/>
+				<div className="relative">
+					<button
+						onClick={() => setDropdownOpen(!dropdownOpen)}
+						className="text-lg font-semibold text-black"
+					>
+						{userName}
+					</button>
+					{dropdownOpen && (
+						<div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg">
+							<button
+								onClick={handleSignOut}
+								className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
+							>
+								Sign Out
+							</button>
+						</div>
+					)}
+				</div>
+			</div>
+			<div className="flex flex-col items-center space-y-4 bg-opacity-75 bg-gray-800 p-6 rounded-lg shadow-lg">
+				<label className="bg-orange-500 text-white py-2 px-6 rounded-lg text-lg cursor-pointer">
+					Choose File
+					<input
+						type="file"
+						className="hidden"
+						onChange={handleFileChange}
+					/>
+				</label>
+				{files && files.length > 0 && (
+					<span className="text-white">{files[0].name}</span>
+				)}
+				<button
+					className="bg-orange-500 text-white py-2 px-6 rounded-lg text-lg"
+					onClick={handleUpload}
+				>
+					Submit
+				</button>
+			</div>
+			{uploadMessage && (
+				<div className="mt-8 text-white">
+					<h2 className="text-2xl font-bold">{uploadMessage}</h2>
+				</div>
+			)}
 		</div>
 	);
-};
-
-export default UploadPage;
+}
