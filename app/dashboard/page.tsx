@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '../firebase'; // Import auth from your firebase setup
 import { onAuthStateChanged } from 'firebase/auth'; // Import directly from firebase/auth
+import Link from 'next/link';
 
 export default function Dashboard() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -42,7 +43,7 @@ export default function Dashboard() {
         <div className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="text-lg font-semibold text-black"
+            className="text-lg font-semibold text-gray-800"
           >
             {userName}
           </button>
@@ -59,18 +60,16 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="flex space-x-4">
-        <button
-          className="bg-orange-500 text-white py-4 px-8 rounded-lg text-xl"
-          onClick={() => router.push('/upload')}
-        >
-          Upload Knowledge Base
-        </button>
-        <button
-          className="bg-orange-500 text-white py-4 px-8 rounded-lg text-xl"
-          onClick={() => router.push('/generate')}
-        >
-          Generate Questions
-        </button>
+        <Link href="/upload">
+          <button className="bg-orange-500 text-white py-4 px-8 rounded-lg text-xl">
+            Upload Knowledge Base
+          </button>
+        </Link>
+        <Link href="/response">
+          <button className="bg-orange-500 text-white py-4 px-8 rounded-lg text-xl">
+            Generate Questions
+          </button>
+        </Link>
       </div>
     </div>
   );

@@ -13,9 +13,8 @@ const UploadPage = () => {
 	const [files, setFiles] = useState<FileList | null>(null);
 	const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 	const [uploading, setUploading] = useState(false);
-	const [progress, setProgress] = useState<number[]>([]);
 	const [error, setError] = useState<string | null>(null);
-	const [uploadSuccess, setUploadSuccess] = useState(false);  // New state for tracking upload success
+	const [uploadSuccess, setUploadSuccess] = useState(false);
 	const router = useRouter();
 
 	useEffect(() => {
@@ -32,20 +31,21 @@ const UploadPage = () => {
 
 	const handleSignOut = async () => {
 		await auth.signOut();
-		router.push('/'); // Redirect to the login page
+		router.push('/');
 	};
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setFiles(e.target.files);
 		setUploadMessage(null);
+		setUploadSuccess(false);
 	};
 
-	const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
+	const handleUpload = async () => {
 		if (!files || files.length === 0) return;
 
 		setUploading(true);
 		setError(null);
+		setUploadSuccess(false);
 
 		try {
 			const file = files[0];
@@ -57,7 +57,7 @@ const UploadPage = () => {
 				const userConfirmed = window.confirm('File already exists. Do you want to replace it?');
 				if (!userConfirmed) {
 					setUploadMessage('Upload cancelled.');
-					console.log('Upload cancelled.');
+					setUploading(false);
 					return;
 				}
 			}
@@ -74,25 +74,58 @@ const UploadPage = () => {
 				lastModified: file.lastModified,
 			});
 
-			setUploadSuccess(true);  // Set to true after successful upload
+			setUploadSuccess(true);
+			setUploadMessage('File uploaded successfully. Ready for AI processing.');
 		} catch (error) {
 			console.error('Error uploading file:', error);
 			setError('An error occurred while uploading the file.');
-			setUploadSuccess(false);  // Ensure this is false if upload fails
+			setUploadSuccess(false);
 		} finally {
 			setUploading(false);
 		}
 	};
 
-	const handlePrepForAI = () => {
-		// This function will be implemented later to trigger the Cloud Function
-		console.log('Preparing file for AI processing');
+	const handlePrepForAI = async () => {
+		if (!files || files.length === 0) {
+			setError('No file selected for AI preparation');
+			return;
+		}
+
+		const fileName = files[0].name;
+		setUploadMessage('Preparing file for AI processing...');
+
+		try {
+			const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+			const url = `https://us-central1-${projectId}.cloudfunctions.net/prepareFileForAI`;
+
+			const response = await fetch(url, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ fileName }),
+			});
+
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
+			}
+
+			const result = await response.json();
+			if (result.success) {
+				setUploadMessage(`File processed successfully. Total chunks: ${result.totalChunks}, Total tokens: ${result.totalTokens}`);
+			} else {
+				setError(result.error || 'An error occurred during file processing');
+			}
+		} catch (error) {
+			console.error('Error preparing file for AI:', error);
+			setError('An error occurred while preparing the file for AI.');
+		}
 	};
 
 	return (
 		<div
 			className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center"
-			style={{ backgroundImage: "url('/background.jpg')" }} // Placeholder background image
+			style={{ backgroundImage: "url('/background.jpg')" }}
 		>
 			<div className="absolute top-4 left-4">
 				<button
@@ -105,7 +138,7 @@ const UploadPage = () => {
 			<h1 className="text-5xl font-bold mb-10 text-gray-800">Upload Knowledge Base</h1>
 			<div className="absolute top-4 right-4 flex items-center">
 				<img
-					src="/profile-pic.jpg" // Placeholder for profile picture
+					src="/profile-pic.jpg"
 					alt="Profile"
 					className="w-10 h-10 rounded-full mr-2"
 				/>
@@ -143,8 +176,9 @@ const UploadPage = () => {
 				<button
 					className="bg-orange-500 text-white py-2 px-6 rounded-lg text-lg"
 					onClick={handleUpload}
+					disabled={uploading || !files}
 				>
-					Submit
+					{uploading ? 'Uploading...' : 'Submit'}
 				</button>
 				{uploadSuccess && (
 					<button
