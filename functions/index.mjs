@@ -8,12 +8,13 @@
 //   response.send("Hello from Firebase!");
 // });
 
-import { onRequest } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions";
 import cors from "cors";
 import { initializeApp } from "firebase-admin/app";
 import { getStorage } from "firebase-admin/storage";
 import { getFirestore } from "firebase-admin/firestore";
+import OpenAI from "openai";
+import * as functions from "firebase-functions";
 
 // Initialize Firebase app
 initializeApp();
@@ -22,12 +23,17 @@ const corsHandler = cors({ origin: true });
 const storage = getStorage();
 const db = getFirestore();
 
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: functions.config().openai.api_key,
+});
+
 // Simple tokenizer function
 function simpleTokenize(text) {
   return text.toLowerCase().match(/\b(\w+)\b/g) || [];
 }
 
-export const prepareFileForAI = onRequest((request, response) => {
+export const prepareFileForAI = functions.https.onRequest((request, response) => {
   return corsHandler(request, response, async () => {
     try {
       const { fileName } = request.body;
@@ -135,3 +141,27 @@ async function storeProcessedData(fileName, tokenizedChunks) {
     processedAt: new Date(),
   });
 }
+
+// Update the callOpenAI function
+export const callOpenAI = functions.https.onRequest((request, response) => {
+  return corsHandler(request, response, async () => {
+    try {
+      const { prompt } = request.body;
+      if (!prompt) throw new Error("No prompt provided");
+
+      const openaiResponse = await openai.completions.create({
+        model: "text-davinci-002",
+        prompt: prompt,
+        max_tokens: 1000,
+      });
+
+      response.json({
+        success: true,
+        result: openaiResponse.choices[0].text,
+      });
+    } catch (error) {
+      logger.error("OpenAI API error:", error);
+      response.status(500).json({ success: false, error: error.message });
+    }
+  });
+});
