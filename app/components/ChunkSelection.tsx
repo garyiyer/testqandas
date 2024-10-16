@@ -59,20 +59,13 @@ const ChunkSelection: React.FC<ChunkSelectionProps> = ({ onChunksSelected }) => 
     fetchChunks();
   }, [user]);
 
-  const handleChunkSelect = (uniqueId: string) => {
-    setSelectedChunks(prev => {
-      if (prev.includes(uniqueId)) {
-        return prev.filter(id => id !== uniqueId);
-      } else if (prev.length < 5) {
-        return [...prev, uniqueId];
-      }
-      return prev;
-    });
+  const handleChunkSelect = (chunkId: string) => {
+    const updatedChunks = selectedChunks.includes(chunkId)
+      ? selectedChunks.filter(id => id !== chunkId)
+      : [...selectedChunks, chunkId];
+    setSelectedChunks(updatedChunks);
+    onChunksSelected(updatedChunks);
   };
-
-  useEffect(() => {
-    onChunksSelected(selectedChunks);
-  }, [selectedChunks, onChunksSelected]);
 
   const filteredChunks = chunks.filter(chunk => 
     chunk.text.toLowerCase().includes(searchTerm.toLowerCase()) ||

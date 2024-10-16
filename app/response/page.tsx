@@ -1,35 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import React, { useState } from 'react';
 import ChunkSelection from '../components/ChunkSelection';
 
 const ResponsePage = () => {
-  const [userName, setUserName] = useState<string | null>(null);
   const [userInput, setUserInput] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [selectedChunks, setSelectedChunks] = useState<string[]>([]);
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserName(user.displayName || user.email || 'User');
-      } else {
-        router.push('/login');
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setUserInput(e.target.value.slice(0, 200));
+    setUserInput(e.target.value);
   };
 
   const handleChunksSelected = (chunks: string[]) => {
@@ -37,74 +18,44 @@ const ResponsePage = () => {
   };
 
   const handleSubmit = async () => {
-    if (userInput.trim() === '') {
-      setError('Please enter a prompt');
-      return;
-    }
-    if (selectedChunks.length === 0) {
-      setError('Please select at least one chunk');
-      return;
-    }
-    setError(null);
     setIsLoading(true);
-    setAiResponse(null);
-
+    setAiResponse('');
+    console.log('Submitting with:', { prompt: userInput, selectedChunks });
     try {
-      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-      const url = `https://us-central1-${projectId}.cloudfunctions.net/callOpenAI`;
-
-      const response = await fetch(url, {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: userInput, chunks: selectedChunks }),
+        body: JSON.stringify({
+          prompt: userInput,
+          selectedChunks: selectedChunks,
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        setAiResponse(result.result);
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to generate response');
+        }
+        setAiResponse(data.response);
       } else {
-        throw new Error(result.error || 'Unknown error occurred');
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Received non-JSON response from server');
       }
-    } catch (error) {
-      console.error('Error calling AI:', error);
-      setError(`An error occurred: ${error instanceof Error ? error.message : String(error)}`);
+    } catch (error: any) {
+      console.error('Error:', error);
+      setAiResponse(`An error occurred: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignOut = async () => {
-    await auth.signOut();
-    router.push('/');
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center p-4">
-      {/* User profile and dropdown */}
-      <div className="absolute top-4 right-4 flex items-center">
-        <img src="/profile-pic.jpg" alt="Profile" className="w-10 h-10 rounded-full mr-2" />
-        <div className="relative">
-          <button onClick={() => setDropdownOpen(!dropdownOpen)} className="text-lg font-semibold text-gray-800">
-            {userName}
-          </button>
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg">
-              <button onClick={handleSignOut} className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100">
-                Sign Out
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
       <h1 className="text-5xl font-bold mb-10 text-gray-800">Generate Questions</h1>
-      
       <div className="w-full max-w-4xl flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-1/2">
           <textarea
@@ -129,7 +80,7 @@ const ResponsePage = () => {
           <ChunkSelection onChunksSelected={handleChunksSelected} />
         </div>
       </div>
-      <div className="mt-8 w-full max-w-4xl p-4 border rounded-md bg-white min-h-[200px] max-h-[400px] overflow-y-auto text-black">
+      <div className="mt-8 w-full max-w-4xl p-4 border rounded-md bg-white min-h-[200px] max-h-[600px] overflow-y-auto text-black">
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
