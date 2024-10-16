@@ -1,13 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import ChunkSelection from '../components/ChunkSelection';
+import Header from '../components/Header';
 
 const ResponsePage = () => {
   const [userInput, setUserInput] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedChunks, setSelectedChunks] = useState<string[]>([]);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserName(user.email || 'User');
+      } else {
+        setUserName(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setUserInput(e.target.value);
@@ -54,43 +70,45 @@ const ResponsePage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center p-4">
-      <h1 className="text-5xl font-bold mb-10 text-gray-800">Generate Questions</h1>
-      <div className="w-full max-w-4xl flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/2">
-          <textarea
-            value={userInput}
-            onChange={handleInputChange}
-            placeholder="Enter your request e.g. I would like 5 multiple choice questions"
-            className="w-full h-32 p-2 border rounded-md resize-none text-black bg-white"
-            maxLength={200}
-          />
-          <div className="text-right text-sm text-gray-500">
-            {userInput.length}/200
+    <div className="flex flex-col min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/background.jpg')" }}>
+      <Header title="Generate Questions" userName={userName} showBackButton={true} />
+      <main className="flex-grow flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-4xl flex flex-col md:flex-row gap-4">
+          <div className="w-full md:w-1/2">
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="Enter your request e.g. I would like 5 multiple choice questions"
+              className="w-full h-32 p-2 border rounded-md resize-none text-black bg-white"
+              maxLength={200}
+            />
+            <div className="text-right text-sm text-gray-500">
+              {userInput.length}/200
+            </div>
+            <button
+              onClick={handleSubmit}
+              className="mt-4 bg-orange-500 text-white py-2 px-4 rounded-lg text-lg w-full hover:bg-orange-600"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Processing...' : 'Generate Questions'}
+            </button>
           </div>
-          <button
-            onClick={handleSubmit}
-            className="mt-4 bg-orange-500 text-white py-4 px-8 rounded-lg text-xl w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Processing...' : 'Send'}
-          </button>
-        </div>
-        <div className="w-full md:w-1/2">
-          <ChunkSelection onChunksSelected={handleChunksSelected} />
-        </div>
-      </div>
-      <div className="mt-8 w-full max-w-4xl p-4 border rounded-md bg-white min-h-[200px] max-h-[600px] overflow-y-auto text-black">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          <div className="w-full md:w-1/2">
+            <ChunkSelection onChunksSelected={setSelectedChunks} />
           </div>
-        ) : aiResponse ? (
-          <pre className="whitespace-pre-wrap">{aiResponse}</pre>
-        ) : (
-          "Your generated questions will appear here."
-        )}
-      </div>
+        </div>
+        <div className="mt-8 w-full max-w-4xl p-4 border rounded-md bg-white min-h-[200px] max-h-[600px] overflow-y-auto text-black">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-full">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+            </div>
+          ) : aiResponse ? (
+            <pre className="whitespace-pre-wrap">{aiResponse}</pre>
+          ) : (
+            "Your generated questions will appear here."
+          )}
+        </div>
+      </main>
     </div>
   );
 };
