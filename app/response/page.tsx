@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import ChunkSelection from '../components/ChunkSelection';
 
 const ResponsePage = () => {
   const [userName, setUserName] = useState<string | null>(null);
@@ -12,6 +13,7 @@ const ResponsePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [selectedChunks, setSelectedChunks] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -30,9 +32,17 @@ const ResponsePage = () => {
     setUserInput(e.target.value.slice(0, 200));
   };
 
+  const handleChunksSelected = (chunks: string[]) => {
+    setSelectedChunks(chunks);
+  };
+
   const handleSubmit = async () => {
     if (userInput.trim() === '') {
       setError('Please enter a prompt');
+      return;
+    }
+    if (selectedChunks.length === 0) {
+      setError('Please select at least one chunk');
       return;
     }
     setError(null);
@@ -48,7 +58,7 @@ const ResponsePage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: userInput }),
+        body: JSON.stringify({ prompt: userInput, chunks: selectedChunks }),
       });
 
       if (!response.ok) {
@@ -75,7 +85,7 @@ const ResponsePage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/background.jpg')" }}>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center p-4">
       {/* User profile and dropdown */}
       <div className="absolute top-4 right-4 flex items-center">
         <img src="/profile-pic.jpg" alt="Profile" className="w-10 h-10 rounded-full mr-2" />
@@ -95,40 +105,40 @@ const ResponsePage = () => {
 
       <h1 className="text-5xl font-bold mb-10 text-gray-800">Generate Questions</h1>
       
-      <div className="w-3/4 bg-white p-6 rounded-lg shadow-lg">
-        <textarea
-          value={userInput}
-          onChange={handleInputChange}
-          placeholder="Enter your request e.g. I would like 5 multiple choice questions"
-          className="w-full h-32 p-2 border rounded-md resize-none text-black"
-          maxLength={200}
-        />
-        <div className="text-right text-sm text-gray-500">
-          {userInput.length}/200
+      <div className="w-full max-w-4xl flex flex-col md:flex-row gap-4">
+        <div className="w-full md:w-1/2">
+          <textarea
+            value={userInput}
+            onChange={handleInputChange}
+            placeholder="Enter your request e.g. I would like 5 multiple choice questions"
+            className="w-full h-32 p-2 border rounded-md resize-none text-black bg-white"
+            maxLength={200}
+          />
+          <div className="text-right text-sm text-gray-500">
+            {userInput.length}/200
+          </div>
+          <button
+            onClick={handleSubmit}
+            className="mt-4 bg-orange-500 text-white py-4 px-8 rounded-lg text-xl w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Processing...' : 'Send'}
+          </button>
         </div>
-        
-        {error && <div className="text-red-500 mt-2 p-2 bg-red-100 rounded">{error}</div>}
-        
-        <button
-          onClick={handleSubmit}
-          className={`mt-4 bg-orange-500 text-white py-4 px-8 rounded-lg text-xl ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Processing...' : 'Send'}
-        </button>
-
-        {/* Scrollable output box */}
-        <div className="mt-4 p-4 border rounded-md bg-gray-100 h-[300px] overflow-y-auto text-black">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-            </div>
-          ) : aiResponse ? (
-            <pre className="whitespace-pre-wrap">{aiResponse}</pre>
-          ) : (
-            "Your generated questions will appear here."
-          )}
+        <div className="w-full md:w-1/2">
+          <ChunkSelection onChunksSelected={handleChunksSelected} />
         </div>
+      </div>
+      <div className="mt-8 w-full max-w-4xl p-4 border rounded-md bg-white min-h-[200px] max-h-[400px] overflow-y-auto text-black">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          </div>
+        ) : aiResponse ? (
+          <pre className="whitespace-pre-wrap">{aiResponse}</pre>
+        ) : (
+          "Your generated questions will appear here."
+        )}
       </div>
     </div>
   );
