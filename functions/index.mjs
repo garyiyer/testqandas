@@ -149,15 +149,15 @@ export const callOpenAI = functions.https.onRequest((request, response) => {
       const { prompt } = request.body;
       if (!prompt) throw new Error("No prompt provided");
 
-      const openaiResponse = await openai.completions.create({
-        model: "text-davinci-002",
-        prompt: prompt,
-        max_tokens: 1000,
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 150,
       });
 
       response.json({
         success: true,
-        result: openaiResponse.choices[0].text,
+        result: completion.choices[0].message.content.trim(),
       });
     } catch (error) {
       logger.error("OpenAI API error:", error);
