@@ -1,66 +1,71 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { auth } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { BookOpen } from 'lucide-react';
 import EmailAuth from './components/EmailAuth';
-import SignInButton from './components/SignInButton';
-import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [showLogin, setShowLogin] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      router.push('/dashboard'); // Redirect to the Dashboard page
-    }
-  }, [user, router]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (user) {
-    return null; // Prevent rendering the login page if user is authenticated
+  if (showLogin) {
+    return <EmailAuth />;
   }
 
   return (
-    <div className="login-page">
-      <header className="flex justify-between items-center p-4 bg-black bg-opacity-70">
-        <div>Logo</div>
-        <nav>
-          <a href="#" className="text-white mx-2">HOME</a>
-          <a href="#" className="text-white mx-2">ABOUT</a>
-          <a href="#" className="text-white mx-2">SERVICE</a>
-          <a href="#" className="text-white mx-2">CONTACT</a>
-        </nav>
-        <div>
-          <input type="text" placeholder="Type to Search" className="p-1" />
-          <button className="bg-orange-500 text-white p-1">Search</button>
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-[#1E293B] text-white py-4">
+        <div className="container mx-auto px-4 flex justify-between items-center">
+          <div className="flex items-center">
+            <BookOpen className="h-6 w-6 text-[#FFA500] mr-2" />
+            <span className="text-xl font-bold">EduAI</span>
+          </div>
+          <nav className="hidden md:flex items-center space-x-6">
+            <a href="#" className="text-white hover:text-[#FFA500]">Home</a>
+            <a href="#about" className="text-white hover:text-[#FFA500]">About</a>
+            <a href="#features" className="text-white hover:text-[#FFA500]">Features</a>
+            <a href="#pricing" className="text-white hover:text-[#FFA500]">Pricing</a>
+          </nav>
+          <div className="flex items-center space-x-4">
+            <button onClick={() => setShowLogin(true)} className="text-white hover:text-[#FFA500]">Sign In</button>
+            <button onClick={() => setShowLogin(true)} className="bg-[#FFA500] text-white px-4 py-2 rounded hover:bg-[#FFB732]">Sign Up</button>
+          </div>
         </div>
       </header>
-      <main className="flex justify-between items-center mt-20">
-        <div className="main-content">
-          <h1>Generate Test Questions from any textbook you can upload</h1>
-          <p>We help students prepare for their exams by generating practice questions.</p>
-        </div>
-        <div className="login-form bg-black bg-opacity-80 p-6 rounded-lg w-80 mr-10">
-          <h2 className="text-white text-2xl mb-4">Login Here</h2>
-          <EmailAuth />
-          <SignInButton />
-        </div>
+
+      <main className="flex-grow bg-white">
+        <section className="py-20">
+          <div className="container mx-auto px-4 flex justify-between items-center">
+            <div className="max-w-2xl">
+              <h1 className="text-5xl font-bold text-[#1E293B] mb-6">
+                AI-powered practice questions, tailored for students and lecturers
+              </h1>
+              <p className="text-xl text-[#4B5563] mb-8">
+                Enhance learning and teaching with our intelligent question generation platform.
+              </p>
+              <button onClick={() => setShowLogin(true)} className="bg-[#FFA500] text-white px-6 py-3 rounded text-lg font-semibold hover:bg-[#FFB732]">
+                Get Started for Free
+              </button>
+            </div>
+            <div className="hidden md:block">
+              <img
+                src="https://source.unsplash.com/random/600x400?education"
+                alt="Education illustration"
+                className="rounded-lg shadow-xl"
+              />
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer className="bg-[#1E293B] text-white py-4">
+        <div className="container mx-auto px-4 flex justify-between items-center">
+          <div className="flex items-center">
+            <BookOpen className="h-6 w-6 text-[#FFA500] mr-2" />
+            <span className="text-sm">© 2024 EduAI. All rights reserved.</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
