@@ -1,0 +1,14 @@
+{
+    "name": "TestQandAv1",
+    "context": "..",
+    "dockerFile": "Dockerfile",
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "extensions": [
+        "ms-vscode.vscode-node-azure-pack",
+        "ms-python.python"
+    ],
+    "postCreateCommand": "pip3 install cursor==0.41",
+    "remoteUser": "vscode"
+}
