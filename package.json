@@ -19,12 +19,13 @@
     "@firebase/functions": "^0.11.8",
     "@firebase/storage": "^0.13.2",
     "eslint-config-google": "^0.14.0",
-    "firebase": "^10.14.0",
+    "firebase": "^10.14.1",
     "lucide-react": "^0.453.0",
     "next": "14.2.14",
     "openai": "^4.67.3",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.7",
@@ -35,6 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/uuid": "^10.0.0",
     "babel-jest": "^29.7.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.14",
